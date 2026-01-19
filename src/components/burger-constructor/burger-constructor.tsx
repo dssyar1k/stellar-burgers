@@ -1,10 +1,11 @@
 import { FC, useMemo } from 'react';
 import { TConstructorIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from '../../services/store';
 import { useNavigate } from 'react-router-dom';
 import {
   clearOrder,
+  createOrder,
   getConstructorItems,
   getOrderRequest,
   getOrderModalData
@@ -33,7 +34,14 @@ export const BurgerConstructor: FC = () => {
   // Обработка клика по кнопке заказа
   const onOrderClick = () => {
     if (!constructorItems.bun || orderRequest) return;
-    // TODO: добавить логику отправки заказа
+
+    const order: string[] = [
+      constructorItems.bun?._id,
+      ...constructorItems.ingredients.map((ingredient) => ingredient._id),
+      constructorItems.bun?._id
+    ];
+
+    dispatch(createOrder(order));
   };
 
   // Закрытие модального окна заказа
