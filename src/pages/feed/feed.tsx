@@ -11,20 +11,16 @@ export const Feed: FC = () => {
   const loading = useSelector(getLoading);
   const orders: TOrder[] = useSelector(getFeedOrders);
 
+  // Инициируем загрузку фида при монтировании компонента
   useEffect(() => {
-    dispatch(getFeeds()).then(() => {});
+    dispatch(getFeeds());
   }, [dispatch]);
 
-  if (!orders.length) {
+  // Отображаем прелоадер, если идёт загрузка или нет заказов
+  if (loading || orders.length === 0) {
     return <Preloader />;
   }
 
-  return (
-    <FeedUI
-      orders={orders}
-      handleGetFeeds={() => {
-        dispatch(getFeeds());
-      }}
-    />
-  );
+  // Основной рендер: передаём заказы и функцию обновления в UI-компонент
+  return <FeedUI orders={orders} handleGetFeeds={() => dispatch(getFeeds())} />;
 };

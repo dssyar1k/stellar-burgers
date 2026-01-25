@@ -3,12 +3,15 @@ import { TConstructorIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 import { useDispatch, useSelector } from '../../services/store';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { selectUser } from '../../services/userSlice';
 import {
   clearOrder,
   createOrder,
+  clearConstructor,
   getConstructorItems,
   getOrderRequest,
-  getOrderModalData
+  getOrderData
 } from '../../services/burgerConstructorSlice';
 
 export const BurgerConstructor: FC = () => {
@@ -18,8 +21,8 @@ export const BurgerConstructor: FC = () => {
   // Получаем данные из стора
   const constructorItems = useSelector(getConstructorItems);
   const orderRequest = useSelector(getOrderRequest);
-  const orderModalData = useSelector(getOrderModalData);
-
+  const orderModalData = useSelector(getOrderData);
+  const user = useSelector(selectUser);
   // Расчёт итоговой цены
   const price = useMemo(() => {
     const bunPrice = constructorItems.bun ? constructorItems.bun.price * 2 : 0;
@@ -46,8 +49,8 @@ export const BurgerConstructor: FC = () => {
 
   // Закрытие модального окна заказа
   const closeOrderModal = () => {
+    dispatch(clearConstructor());
     dispatch(clearOrder());
-    navigate('/');
   };
 
   return (

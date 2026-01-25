@@ -1,29 +1,37 @@
-import { Navigate, useLocation, type To } from 'react-router-dom';
-import { ReactElement } from 'react';
+import { useSelector } from '../services/store';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Preloader } from '../components/ui/preloader/preloader';
+import { selectUser, selectIsAuthChecked } from '../services/userSlice';
 
-interface ProtectedRouteProps {
-  children: ReactElement;
+type ProtectedRouteProps = {
   onlyUnAuth?: boolean;
-}
-
-export const ProtectedRoute = ({
-  children,
-  onlyUnAuth = false
-}: ProtectedRouteProps): ReactElement => {
-  const isAuthenticated = false;
-
-  const location = useLocation();
-
-  if (onlyUnAuth && isAuthenticated) {
-    const from: To = location.state?.from || '/';
-    return <Navigate to={from} replace />;
-  }
-
-  if (!onlyUnAuth && !isAuthenticated) {
-    return <Navigate to='/login' state={{ from: location }} replace />;
-  }
-
-  return children;
+  children: React.ReactElement;
 };
 
-export default ProtectedRoute;
+export const ProtectedRoute = ({
+  onlyUnAuth,
+  children
+}: ProtectedRouteProps) => {
+  const isAuthChecked = useSelector(selectIsAuthChecked);
+  const user = useSelector(selectUser);
+  const location = useLocation();
+
+  // Пока идёт проверка авторизации — показываем прелоадер
+  if (!isAuthChecked) {
+    return <Preloader />;
+  }
+
+  // Для неавторизованных пользователей: если требуется только неавторизованный доступ, а пользователь авторизован
+  if (onlyUnAuth && user) {
+    const fromPath = (location.state as { from?: string })?.from || '/';
+    return <Navigate to={fromPath} replace />;
+  }
+
+  // Для авторизованных пользователей: если требуется авторизация, но пользователь не авторизован
+  if (!onlyUnAuth && !user) {
+    return <Navigate to='/login' state={{ from: location.pathname }} replace />;
+  }
+
+  // Если все проверки пройдены — отдаём дочерние компоненты
+  return children;
+};

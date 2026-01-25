@@ -1,62 +1,60 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useEffect } from 'react';
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
 import { TIngredient } from '@utils-types';
 import { useSelector } from 'react-redux';
 import { getIngredientsSelector } from '../../services/ingredientsSlice';
+import { useParams } from 'react-router-dom';
+import { getFeedOrders } from '../../services/feedSlice';
+import { useDispatch } from '../../services/store';
+import {
+  getOrderByNumber,
+  getOrderData
+} from '../../services/burgerConstructorSlice';
 
 export const OrderInfo: FC = () => {
-  // Получаем ингредиенты из стора
-  const ingredients = useSelector(getIngredientsSelector);
+  const { number } = useParams();
+  const orders = useSelector(getFeedOrders);
+  const dispatch = useDispatch();
 
-  // Временные данные заказа (заменить на селектор из стора)
-  const orderData = {
-    createdAt: '',
-    ingredients: [] as string[],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0
-  };
+  const orderData = useSelector(getOrderData);
+  const ingredients: TIngredient[] = useSelector(getIngredientsSelector);
 
-  // Обработка данных заказа для отображения
+  useEffect(() => {
+    if (number) {
+      dispatch(getOrderByNumber(Number(number)));
+    }
+  }, [dispatch, number]);
+
   const preparedOrder = useMemo(() => {
-    // Проверка наличия необходимых данных
-    if (!orderData || ingredients.length === 0) return null;
+    if (!orderData || ingredients.length === 0) {
+      return null;
+    }
 
-    // Форматируем дату
     const formattedDate = new Date(orderData.createdAt);
 
-    // Тип для агрегированных ингредиентов
     type AggregatedIngredient = TIngredient & { count: number };
     type IngredientsMap = { [id: string]: AggregatedIngredient };
 
-    // Группируем ингредиенты и считаем количество
-    const groupedIngredients = orderData.ingredients.reduce(
-      (acc, ingredientId) => {
-        const ingredient = ingredients.find((ing) => ing._id === ingredientId);
+    const groupedIngredients: IngredientsMap = {};
 
-        if (ingredient) {
-          if (!acc[ingredientId]) {
-            acc[ingredientId] = { ...ingredient, count: 1 };
-          } else {
-            acc[ingredientId].count += 1;
-          }
+    orderData.ingredients.forEach((ingredientId) => {
+      const ingredient = ingredients.find((ing) => ing._id === ingredientId);
+
+      if (ingredient) {
+        if (!groupedIngredients[ingredientId]) {
+          groupedIngredients[ingredientId] = { ...ingredient, count: 1 };
+        } else {
+          groupedIngredients[ingredientId].count += 1;
         }
+      }
+    });
 
-        return acc;
-      },
-      {} as IngredientsMap
-    );
-
-    // Рассчитываем общую стоимость
     const totalAmount = Object.values(groupedIngredients).reduce(
       (sum, item) => sum + item.price * item.count,
       0
     );
 
-    // Возвращаем обработанные данные
     return {
       ...orderData,
       ingredientsInfo: groupedIngredients,
@@ -65,7 +63,6 @@ export const OrderInfo: FC = () => {
     };
   }, [orderData, ingredients]);
 
-  // Пока данные не готовы — показываем прелоадер
   if (!preparedOrder) {
     return <Preloader />;
   }

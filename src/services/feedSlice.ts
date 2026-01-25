@@ -1,13 +1,12 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { TOrder } from '@utils-types';
-import { getFeedsApi, getOrderByNumberApi } from '@api';
+import { getFeedsApi, getOrderByNumberApi, getOrdersApi } from '@api';
 
 // Интерфейс состояния ленты заказов
 export type TStateFeed = {
   orders: TOrder[];
   total: number;
   totalToday: number;
-  orderModal: TOrder | null;
   loading: boolean;
   error: null | string | undefined;
 };
@@ -17,7 +16,6 @@ const initialState: TStateFeed = {
   orders: [],
   total: 0,
   totalToday: 0,
-  orderModal: null,
   loading: false,
   error: null
 };
@@ -29,17 +27,13 @@ export const getFeeds = createAsyncThunk(
 );
 
 // Асинхронный экшен для запроса конкретного заказа
-export const getOrderByNumber = createAsyncThunk<
-  { orders: TOrder[] },
-  number,
-  { rejectValue: string }
->('orders/getOrderByNumber', async (number, { rejectWithValue }) => {
-  try {
-    return await getOrderByNumberApi(number);
-  } catch {
-    return rejectWithValue('Ошибка получения данных заказа');
+export const getProfileOrders = createAsyncThunk(
+  'feeds/getProfileOrders',
+  async () => {
+    const data = await getOrdersApi();
+    return data;
   }
-});
+);
 
 // Создание slice для управления состоянием ленты
 export const feedSlice = createSlice({
@@ -66,17 +60,19 @@ export const feedSlice = createSlice({
 
     // Обработчики для getOrderByNumber
     builder
-      .addCase(getOrderByNumber.pending, (state) => {
+      .addCase(getProfileOrders.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getOrderByNumber.fulfilled, (state, { payload }) => {
-        state.loading = false;
-        state.orderModal = payload.orders.length > 0 ? payload.orders[0] : null;
-      })
-      .addCase(getOrderByNumber.rejected, (state, { error, payload }) => {
-        state.loading = false;
-        state.error = payload ?? error.message ?? 'Ошибка загрузки заказа';
+      .addCase(
+        getProfileOrders.fulfilled,
+        (state, action: PayloadAction<TOrder[]>) => {
+          state.loading = false;
+          state.orders = action.payload;
+        }
+      )
+      .addCase(getProfileOrders.rejected, (state, action) => {
+        state.error = action.error.message || 'Не удалось загрузить заказы';
       });
   },
   selectors: {
@@ -84,8 +80,7 @@ export const feedSlice = createSlice({
     getTotalOrders: (state) => state.total,
     getTotalToday: (state) => state.totalToday,
     getLoading: (state) => state.loading,
-    getError: (state) => state.error,
-    selectOrderModal: (state) => state.orderModal
+    getError: (state) => state.error
   }
 });
 
@@ -104,5 +99,5 @@ export const {
 // Объединённый экспорт экшенов
 export const feedActions = {
   getFeeds,
-  getOrderByNumber
+  getProfileOrders
 };
