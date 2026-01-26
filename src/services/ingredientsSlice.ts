@@ -27,19 +27,20 @@ const ingredientsSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    builder
-      .addCase(getIngredients.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(getIngredients.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message ?? 'Ошибка загрузки ингредиентов';
-      })
-      .addCase(getIngredients.fulfilled, (state, action) => {
-        state.loading = false;
-        state.ingredients = action.payload;
-      });
+    builder.addCase(getIngredients.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(getIngredients.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message ?? 'Ошибка загрузки ингредиентов';
+    });
+
+    builder.addCase(getIngredients.fulfilled, (state, action) => {
+      state.loading = false;
+      state.ingredients = action.payload;
+    });
   },
   selectors: {
     getIngredientsSelector: (state) => state.ingredients,
@@ -49,5 +50,6 @@ const ingredientsSlice = createSlice({
 });
 
 export default ingredientsSlice.reducer;
+
 export const { getIngredientsSelector, getLoadingStatus, getErrorStatus } =
   ingredientsSlice.selectors;

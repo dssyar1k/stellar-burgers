@@ -25,14 +25,14 @@ const App = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Извлекаем background из состояния локации
   const locationState = location.state as { background?: Location };
-
   const background = locationState && location.state?.background;
 
-  const closeModal = () => {
-    navigate(-1);
-  };
+  // Функция закрытия модального окна
+  const closeModal = () => navigate(-1);
 
+  // Загрузка данных при монтировании компонента
   useEffect(() => {
     dispatch(getIngredients());
     dispatch(getUser()).finally(() => dispatch(setAuthChecked(true)));
@@ -41,10 +41,13 @@ const App = () => {
   return (
     <div className={styles.app}>
       <AppHeader />
+
+      {/* Основной набор маршрутов */}
       <Routes location={background || location}>
         <Route path='/' element={<ConstructorPage />} />
         <Route path='/ingredients/:id' element={<IngredientDetails />} />
         <Route path='/feed' element={<Feed />} />
+
         <Route
           path='/login'
           element={
@@ -93,10 +96,8 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-        {/*Роуты для рендера контента по условию отсутствия фонового состояния, то есть когда пользователь открывает прямую ссылку*/}
         <Route path='*' element={<NotFound404 />} />
         <Route path='/feed/:number' element={<OrderInfo />} />
-        <Route path='/ingredients/:id' element={<IngredientDetails />} />
         <Route
           path='/profile/orders/:number'
           element={
@@ -106,7 +107,8 @@ const App = () => {
           }
         />
       </Routes>
-      {/*Роуты для рендера модальных окон по условию наличия фонового состояния*/}
+
+      {/* Модальные окна для детального просмотра */}
       {background && (
         <Routes>
           <Route
