@@ -36,8 +36,11 @@ export const BurgerConstructor: FC = () => {
 
   // Обработка клика по кнопке заказа
   const onOrderClick = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (!constructorItems.bun || orderRequest) return;
-
     const order: string[] = [
       constructorItems.bun?._id,
       ...constructorItems.ingredients.map((ingredient) => ingredient._id),
@@ -49,7 +52,6 @@ export const BurgerConstructor: FC = () => {
 
   // Закрытие модального окна заказа
   const closeOrderModal = () => {
-    dispatch(clearConstructor());
     dispatch(clearOrder());
   };
 
