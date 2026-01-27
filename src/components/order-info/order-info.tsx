@@ -1,67 +1,71 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useEffect } from 'react';
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
 import { TIngredient } from '@utils-types';
+import { useSelector } from 'react-redux';
+import { getIngredientsSelector } from '../../services/ingredientsSlice';
+import { useParams } from 'react-router-dom';
+import { getFeedOrders } from '../../services/feedSlice';
+import { useDispatch } from '../../services/store';
+import {
+  getOrderByNumber,
+  getOrderData
+} from '../../services/burgerConstructorSlice';
 
 export const OrderInfo: FC = () => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0
-  };
+  const { number } = useParams();
+  const orders = useSelector(getFeedOrders);
+  const dispatch = useDispatch();
 
-  const ingredients: TIngredient[] = [];
+  const orderData = useSelector(getOrderData);
+  const ingredients: TIngredient[] = useSelector(getIngredientsSelector);
 
-  /* Готовим данные для отображения */
-  const orderInfo = useMemo(() => {
-    if (!orderData || !ingredients.length) return null;
+  useEffect(() => {
+    if (number) {
+      dispatch(getOrderByNumber(Number(number)));
+    }
+  }, [dispatch, number]);
 
-    const date = new Date(orderData.createdAt);
+  const preparedOrder = useMemo(() => {
+    if (!orderData || ingredients.length === 0) {
+      return null;
+    }
 
-    type TIngredientsWithCount = {
-      [key: string]: TIngredient & { count: number };
-    };
+    const formattedDate = new Date(orderData.createdAt);
 
-    const ingredientsInfo = orderData.ingredients.reduce(
-      (acc: TIngredientsWithCount, item) => {
-        if (!acc[item]) {
-          const ingredient = ingredients.find((ing) => ing._id === item);
-          if (ingredient) {
-            acc[item] = {
-              ...ingredient,
-              count: 1
-            };
-          }
+    type AggregatedIngredient = TIngredient & { count: number };
+    type IngredientsMap = { [id: string]: AggregatedIngredient };
+
+    const groupedIngredients: IngredientsMap = {};
+
+    orderData.ingredients.forEach((ingredientId) => {
+      const ingredient = ingredients.find((ing) => ing._id === ingredientId);
+
+      if (ingredient) {
+        if (!groupedIngredients[ingredientId]) {
+          groupedIngredients[ingredientId] = { ...ingredient, count: 1 };
         } else {
-          acc[item].count++;
+          groupedIngredients[ingredientId].count += 1;
         }
+      }
+    });
 
-        return acc;
-      },
-      {}
-    );
-
-    const total = Object.values(ingredientsInfo).reduce(
-      (acc, item) => acc + item.price * item.count,
+    const totalAmount = Object.values(groupedIngredients).reduce(
+      (sum, item) => sum + item.price * item.count,
       0
     );
 
     return {
       ...orderData,
-      ingredientsInfo,
-      date,
-      total
+      ingredientsInfo: groupedIngredients,
+      date: formattedDate,
+      total: totalAmount
     };
   }, [orderData, ingredients]);
 
-  if (!orderInfo) {
+  if (!preparedOrder) {
     return <Preloader />;
   }
 
-  return <OrderInfoUI orderInfo={orderInfo} />;
+  return <OrderInfoUI orderInfo={preparedOrder} />;
 };

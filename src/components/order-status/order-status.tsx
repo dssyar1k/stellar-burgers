@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import { OrderStatusProps } from './type';
 import { OrderStatusUI } from '@ui';
 
+// Словарь текстовых представлений статусов заказа
 const statusText: { [key: string]: string } = {
   pending: 'Готовится',
   done: 'Выполнен',
@@ -21,5 +22,7 @@ export const OrderStatus: FC<OrderStatusProps> = ({ status }) => {
       textStyle = '#F2F2F3';
   }
 
-  return <OrderStatusUI textStyle={textStyle} text={statusText[textStyle]} />;
+  const displayText = statusText[status] || statusText.created;
+
+  return <OrderStatusUI textStyle={textStyle} text={displayText} />;
 };
