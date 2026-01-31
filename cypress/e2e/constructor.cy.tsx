@@ -18,27 +18,31 @@ const SELECTORS = {
 describe('Страница конструктора бургера', () => {
   beforeEach(() => {
     cy.intercept('GET', `${apiUrl}/ingredients`, {
+      statusCode: 200,
       fixture: 'ingredients.json'
-    });
+    }).as('getIngredients');
     cy.intercept('GET', `${apiUrl}/auth/user`, {
+      statusCode: 200,
       fixture: 'user.json'
-    });
+    }).as('getUser');
     cy.intercept('POST', `${apiUrl}/orders`, {
+      statusCode: 201,
       fixture: 'order.json'
-    });
+    }).as('createOrder');
 
     window.localStorage.setItem(
       'refreshToken',
       JSON.stringify('test-refreshToken')
     );
     cy.setCookie('accessToken', 'Bearer access-token');
-
     cy.visit('/');
+    cy.wait('@getIngredients');
+    cy.wait('@getUser');
   });
 
   afterEach(() => {
     cy.clearCookies();
-    cy.clearLocalStorage();
+    cy.window().then((win) => win.localStorage.clear());
   });
 
   it('Тест добавления булки в конструктор', () => {
@@ -114,6 +118,7 @@ describe('Страница конструктора бургера', () => {
       .contains('Оформить заказ')
       .should('exist')
       .click();
+    cy.wait('@createOrder');
     cy.get(SELECTORS.orderNumber).should('contain', '99805');
     cy.get(SELECTORS.closeButton).click();
     cy.get(SELECTORS.modal).should('not.exist');
